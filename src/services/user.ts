@@ -2,6 +2,7 @@ import bcrypt from "bcryptjs";
 import { AlreadyExistsError } from "../utils/appErrors";
 import { createUserCredentials } from "../validations/user";
 import prisma from "../config/database";
+import redisClient from "../config/redis";
 
 export default class UserService {
   createUser = async (data: createUserCredentials) => {
@@ -10,7 +11,10 @@ export default class UserService {
     if (userExists) {
       throw new AlreadyExistsError("User already exists");
     }
-    const hashedPassword = bcrypt.hashSync(password, process.env.SALT_ROUNDS);
+    const hashedPassword = bcrypt.hashSync(
+      password,
+      Number(process.env.SALT_ROUNDS)
+    );
     const newUser = await prisma.user.create({
       data: {
         name,
@@ -19,6 +23,7 @@ export default class UserService {
         phone,
       },
     });
+    await redisClient.set(`tokens:${newUser.id}`, JSON.stringify(new Map()));
 
     return newUser;
   };

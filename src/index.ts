@@ -1,4 +1,4 @@
-import express from "express";
+import express, { NextFunction } from "express";
 import http from "http";
 import dotenv from "dotenv";
 import { Request, Response } from "express";
@@ -18,8 +18,7 @@ app.use(express.urlencoded({ extended: true }));
 
 app.use("/api/v1", router);
 
-app.use((err: AppError, req: Request, res: Response) => {
-  logger.error(err);
+app.use((err: AppError, req: Request, res: Response, next: NextFunction) => {
   return err.isOperational
     ? res.status(err.code).json({
         message: err.message,

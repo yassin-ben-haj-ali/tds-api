@@ -1,7 +1,8 @@
-import express, { NextFunction } from "express";
+import express, { Request, Response, NextFunction } from "express";
 import http from "http";
 import dotenv from "dotenv";
-import { Request, Response } from "express";
+import cors from "cors";
+import cookieParser from "cookie-parser";
 import logger from "./utils/logger";
 import { AppError } from "./utils/appErrors";
 import router from "./routes";
@@ -15,6 +16,13 @@ const PORT = process.env.PORT || 8800;
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(
+  cors({
+    origin: "http://localhost:5173",
+    credentials: true,
+  })
+);
+app.use(cookieParser());
 
 app.use("/api/v1", router);
 

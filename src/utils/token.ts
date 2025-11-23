@@ -77,4 +77,7 @@ export default class TokenManager {
     this.createdTokens.set(type, { token, expAt, jti });
     this.tokensMap.set(jti, { type, expAt, revockedAt: null });
   }
+  getByType(type: string) {
+    return this.createdTokens.get(type);
+  }
 }

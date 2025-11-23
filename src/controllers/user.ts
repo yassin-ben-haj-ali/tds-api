@@ -9,13 +9,23 @@ export default class UserController {
   }
 
   createUser = async (req: Request, res: Response) => {
-    const { name, email, password, phone, confirmPassword } = req.body;
-    const user = await this.userService.createUser({
-      name,
-      email,
+    const {
+      firstName,
+      mailAdress,
+      lastName,
       password,
       phone,
       confirmPassword,
+      role,
+    } = req.body;
+    const user = await this.userService.createUser({
+      firstName,
+      mailAdress,
+      lastName,
+      password,
+      phone,
+      confirmPassword,
+      role,
     });
     return res.status(201).json({ message: "User created successfully", user });
   };

@@ -20,13 +20,25 @@ enum Role {
 }
 
 model User {
-  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  id         String    @id @default(auto()) @map("_id") @db.ObjectId
   firstName  String
   lastName   String
-  mailAdress String   @unique
+  mailAdress String    @unique
   role       Role
   password   String
   phone      String?
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  articles   Article[]
+}
+
+model Article {
+  id           String   @id @default(auto()) @map("_id") @db.ObjectId
+  number       String   @unique
+  exportedAt   DateTime
+  quantity     Int
+  technicienId String   @db.ObjectId
+  technicien   User     @relation(fields: [technicienId], references: [id])
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 }

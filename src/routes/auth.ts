@@ -13,5 +13,7 @@ authRouter.post(
   catchMiddleware(authController.login)
 );
 authRouter.get("/me", authenticate, catchMiddleware(authController.active));
+authRouter.post("/logout", authenticate, authController.logout);
+authRouter.get("/refresh", catchMiddleware(authController.refresh));
 
 export default authRouter;

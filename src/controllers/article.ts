@@ -1,5 +1,4 @@
 import { Request, Response } from "express";
-import UserService from "../services/user";
 import ArticleService from "../services/Article";
 import { Prisma } from "@prisma/client";
 import { processArgs } from "../utils/processArgs";

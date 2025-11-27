@@ -1,8 +1,9 @@
+// TokenManager: supports issuing, storing, and revoking both access and refresh JWT tokens per user (stored in Redis via service).
 import jwt from "jsonwebtoken";
 import { randomUUID } from "crypto";
 import ms, { StringValue } from "ms";
 
-type TokensMap = Map<
+export type TokensMap = Map<
   string,
   { expAt: number; revockedAt?: number | null; type: string }
 >;
@@ -14,7 +15,7 @@ type CreatedTokensMap = Map<
 
 type createTokenParams = {
   userId?: string;
-  role?: string;
+  role: string | undefined;
   type: string;
   expiresIn?: StringValue;
 };
@@ -26,7 +27,7 @@ const clearOldTokens = (tokensMap: TokensMap) => {
   tokensMap.forEach((token, jti) => {
     if (token.revockedAt && token.revockedAt < keepDate) {
       toRemove.push(jti);
-    } else if (token.expAt >= now) {
+    } else if (token.expAt >= now && token.type != "refresh") {
       token.revockedAt = now;
     }
   });

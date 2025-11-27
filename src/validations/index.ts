@@ -1,5 +1,6 @@
 import { createArticleSchema } from "./article";
 import { loginSchema } from "./auth";
+import { createFabriquantSchema } from "./fabriquant";
 import { createUserSchema } from "./user";
 
 type schemasType = {
@@ -10,6 +11,7 @@ const schemas: schemasType = {
   login: loginSchema,
   createUser: createUserSchema,
   createArticle: createArticleSchema,
+  createFabriquant: createFabriquantSchema,
 };
 
 const validator = (schemaName: string) => {

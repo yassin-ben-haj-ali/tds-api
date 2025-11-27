@@ -4,7 +4,7 @@ import { NextFunction, Request, Response } from "express";
 import prisma from "../config/database";
 import redisClient from "../config/redis";
 
-type JWTPayload = {
+export type JWTPayload = {
   sub: string;
   jti: string;
   role?: string;
@@ -18,6 +18,12 @@ type User = {
   lastName: string;
 };
 
+export type TokenData = {
+  expAt: number;
+  revockedAt?: number | null;
+  type: string;
+};
+
 export interface RequestUser extends Request {
   user?: User;
 }
@@ -27,12 +33,12 @@ export const authenticate = async (
   res: Response,
   next: NextFunction
 ) => {
+  let token = req.headers.authorization;
+  if (!token || !token.startsWith("Bearer ")) {
+    return res.status(401).json({ message: "No session" });
+  }
+  token = token.slice(7, token.length);
   try {
-    const token = req.cookies?.access_token;
-    if (!token) {
-      return res.status(401).json({ message: "No session" });
-    }
-
     const { sub, jti } = jwt.verify(
       token,
       process.env.TOKEN_PASSWORD as string
@@ -50,22 +56,37 @@ export const authenticate = async (
       return res.status(401).json({ message: "No session" });
     }
 
-    const tokensMap = userTokens
-      ? new Map(Object.entries(JSON.parse(userTokens)))
-      : new Map();
+    const tokensMap: Map<string, TokenData> = new Map(
+      Object.entries(JSON.parse(userTokens))
+    );
 
-    if (tokensMap.has(jti)) {
-      req.user = {
-        id: user.id,
-        email: user.mailAdress,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        role: user.role,
-      };
-      return next();
+    const tokenData = tokensMap.get(jti);
+
+    if (!tokenData) {
+      return res.status(401).json({ message: "Invalid token" });
     }
+
+    // Check if token has been revoked
+    if (tokenData.revockedAt) {
+      return res.status(401).json({ message: "Token has been revoked" });
+    }
+
+    // Check if token has expired
+    if (tokenData.expAt !== -1 && tokenData.expAt < Date.now()) {
+      return res.status(401).json({ message: "Token has expired" });
+    }
+
+    req.user = {
+      id: user.id,
+      email: user.mailAdress,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      role: user.role,
+    };
+
+    return next();
   } catch (err) {
     logger.error(err);
+    return res.status(401).json({ message: "Unauthorized" });
   }
-  return res.status(401).json({ message: "Unauthorized" });
 };

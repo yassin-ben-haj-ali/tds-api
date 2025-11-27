@@ -68,7 +68,7 @@ export function processArgs(args: any) {
   if (Object.keys(where).length > 0) {
     structuredData.where = where;
   } else {
-    structuredData.where = { ...where, deletedAt: null };
+    structuredData.where = { ...where};
   }
   if (Object.keys(orderBy).length > 0) {
     structuredData.orderBy = orderBy;

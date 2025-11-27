@@ -12,10 +12,9 @@ export default class ArticleController {
   }
 
   createArticle = async (req: Request, res: Response) => {
-    const { number, technicienId, quantity, exportedAt } = req.body;
+    const { number, quantity, exportedAt } = req.body;
     const article = await this.articleService.createArticle({
       number,
-      technicienId,
       quantity,
       exportedAt,
     });
@@ -52,7 +51,6 @@ export default class ArticleController {
     const queryArgs: Prisma.ArticleFindManyArgs = {
       where: args?.where as Prisma.ArticleWhereInput,
       orderBy: args?.orderBy as Prisma.ArticleOrderByWithRelationInput,
-      include: args.select,
     };
 
     // Add skip only if defined

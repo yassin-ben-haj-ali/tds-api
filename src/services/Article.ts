@@ -7,16 +7,12 @@ import { PaginatedInterface } from "../utils/type";
 
 export default class ArticleService {
   createArticle = async (data: createArticleCredentials) => {
-    const { number, exportedAt, quantity, technicienId } = data;
+    const { number, exportedAt, quantity } = data;
 
     const articleExist = await prisma.article.findUnique({
       where: { number },
     });
     if (articleExist) throw new AlreadyExistsError("Article already exist");
-    const userExists = await prisma.user.findUnique({
-      where: { id: technicienId },
-    });
-    if (!userExists) throw new NotFoundError("Technicien not found");
 
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);
@@ -28,7 +24,7 @@ export default class ArticleService {
     }
 
     const newArticle = await prisma.article.create({
-      data: { number, exportedAt, quantity, technicienId },
+      data: { number, exportedAt, quantity },
     });
 
     return newArticle;

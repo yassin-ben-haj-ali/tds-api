@@ -6,8 +6,56 @@ import TokenManager from "../utils/token";
 import redisClient from "../config/redis";
 import jwt from "jsonwebtoken";
 import { JWTPayload, TokenData } from "../middlewares/auth";
+import EmailService from "./email";
 
 export default class AuthService {
+  private emailService: EmailService;
+  constructor() {
+    this.emailService = new EmailService();
+  }
+  sendEmailVerification = async (userId: string, email: string) => {
+    const userExist = await prisma.user.findUnique({
+      where: { id: userId },
+    });
+    if (!userExist) {
+      throw new NotFoundError("User not found");
+    }
+
+    const tokens = await redisClient.get(`tokens:${userId}`);
+    if (!tokens) {
+      throw new NotFoundError("No session found");
+    }
+
+    const tokensMap = new Map<string, TokenData>(
+      Object.entries(JSON.parse(tokens))
+    );
+    const tokenManager = new TokenManager({ tokensMap: tokensMap });
+
+    tokenManager.createToken({
+      userId: userExist.id,
+      role: "USER",
+      type: "EMAIL_VERIFICATION",
+      expiresIn: "1d",
+    });
+
+    const emailToken = tokenManager.getByType("EMAIL_VERIFICATION");
+
+    if (!emailToken) {
+      throw new Error("Failed to generate email verification token");
+    }
+
+    const { token } = emailToken;
+
+    // Save token to Redis
+    await redisClient.set(
+      `tokens:${userId}`,
+      JSON.stringify(Object.fromEntries(tokenManager.tokensMap))
+    );
+
+    await this.emailService.sendEmailVerification(email, token);
+
+    return { message: "Verification email sent successfully" };
+  };
   login = async (data: LoginCredentials) => {
     const { mailAdress, password } = data;
     const userExists = await prisma.user.findUnique({
@@ -15,6 +63,11 @@ export default class AuthService {
     });
     if (!userExists) {
       throw new NotFoundError("User not found");
+    }
+    userExists;
+
+    if (!userExists.password || !userExists.verified) {
+      throw new Error("User not verified");
     }
     const isPasswordValid = bcrypt.compareSync(password, userExists.password);
     if (!isPasswordValid) {
@@ -28,14 +81,14 @@ export default class AuthService {
     // Access Token
     tokenManager.createToken({
       userId: userExists.id,
-      role: "user",
+      role: "USER",
       type: "access",
       expiresIn: "3h",
     });
     // Refresh Token
     tokenManager.createToken({
       userId: userExists.id,
-      role: "user",
+      role: "USER",
       type: "refresh",
       expiresIn: "7d",
     });
@@ -143,5 +196,44 @@ export default class AuthService {
       accessToken: accessToken.token,
       user: userExist,
     };
+  };
+  verifyEmailToken = async (emailToken: string) => {
+    const { jti, sub } = jwt.verify(
+      emailToken,
+      process.env.TOKEN_PASSWORD as string
+    ) as JWTPayload;
+
+    const userExist = await prisma.user.findUnique({
+      where: { id: sub },
+    });
+    if (!userExist) {
+      throw new NotFoundError("User not found");
+    }
+    const tokens = await redisClient.get(`tokens:${sub}`);
+    if (!tokens) throw new NotFoundError("No session found");
+    const tokensMap = new Map<string, TokenData>(
+      Object.entries(JSON.parse(tokens))
+    );
+    const tokenData = tokensMap.get(jti);
+    if (!tokenData || tokenData.type !== "EMAIL_VERIFICATION") {
+      throw new NotFoundError("Verification token invalid");
+    }
+    if (tokenData.revockedAt) {
+      throw new NotFoundError("Verification token revoked");
+    }
+    if (tokenData.expAt !== -1 && tokenData.expAt < Date.now()) {
+      throw new NotFoundError("Verification token expired");
+    }
+    await prisma.user.update({
+      where: { id: sub },
+      data: { verified: true },
+    });
+    
+    tokensMap.set(jti, { ...tokenData, revockedAt: Date.now() });
+    await redisClient.set(
+      `tokens:${sub}`,
+      JSON.stringify(Object.fromEntries(tokensMap))
+    );
+    return { message: "Email successfully verified" };
   };
 }

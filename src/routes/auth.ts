@@ -15,5 +15,6 @@ authRouter.post(
 authRouter.get("/me", authenticate, catchMiddleware(authController.active));
 authRouter.post("/logout", authenticate, authController.logout);
 authRouter.get("/refresh", catchMiddleware(authController.refresh));
+authRouter.get("/verify", catchMiddleware(authController.verify));
 
 export default authRouter;

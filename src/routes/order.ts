@@ -9,7 +9,7 @@ const orderController = new OrderController();
 
 orderRouter.post(
   "/",
-  validateMiddleware("createArticle"),
+  validateMiddleware("createOrder"),
   catchMiddleware(orderController.createOrder)
 );
 orderRouter.get("/", catchMiddleware(orderController.getOrders));

@@ -26,16 +26,18 @@ enum ArticleStatus {
 }
 
 model User {
-  id         String   @id @default(auto()) @map("_id") @db.ObjectId
-  firstName  String
-  lastName   String
-  mailAdress String   @unique
-  role       Role
-  password   String?
-  phone      String?
-  verified   Boolean  @default(false)
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  id              String   @id @default(auto()) @map("_id") @db.ObjectId
+  firstName       String
+  lastName        String
+  mailAdress      String   @unique
+  role            Role
+  password        String?
+  telephoneNumber String
+  countryCode     String?
+  verified        Boolean  @default(false)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  order           Order[]
 }
 
 model Article {
@@ -46,7 +48,7 @@ model Article {
   status     ArticleStatus @default(STOCK)
   createdAt  DateTime      @default(now())
   updatedAt  DateTime      @updatedAt
-  order      Order?
+  order      Order[]
 }
 
 model Fabriquant {
@@ -58,15 +60,27 @@ model Fabriquant {
   countryCode     String?
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
-  order           Order?
+  order           Order[]
 }
 
 model Order {
-  id           String     @id @default(auto()) @map("_id") @db.ObjectId
-  fabriquantId String     @unique @db.ObjectId
-  fabriquant   Fabriquant @relation(fields: [fabriquantId], references: [id])
-  articleId    String     @unique @db.ObjectId
-  article      Article    @relation(fields: [articleId], references: [id])
-  createdAt    DateTime   @default(now())
-  updatedAt    DateTime   @updatedAt
+  id           String       @id @default(auto()) @map("_id") @db.ObjectId
+  fabriquantId String       @db.ObjectId
+  fabriquant   Fabriquant   @relation(fields: [fabriquantId], references: [id])
+  articleId    String       @db.ObjectId
+  article      Article      @relation(fields: [articleId], references: [id])
+  technicienId String       @db.ObjectId
+  technicien   User         @relation(fields: [technicienId], references: [id])
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  orderItems   OrderItems[]
+}
+
+model OrderItems {
+  id      String @id @default(auto()) @map("_id") @db.ObjectId
+  orderId String @db.ObjectId
+  order   Order  @relation(fields: [orderId], references: [id])
+  quantity Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }

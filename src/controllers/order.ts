@@ -46,6 +46,11 @@ export default class OrderController {
     const queryArgs: Prisma.OrderFindManyArgs = {
       where: args?.where as Prisma.OrderWhereInput,
       orderBy: args?.orderBy as Prisma.OrderOrderByWithRelationInput,
+      include: {
+        fabriquant: true,
+        technicien: true,
+        article:true
+      },
     };
 
     // Add skip only if defined

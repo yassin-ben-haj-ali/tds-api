@@ -4,6 +4,7 @@ import authRouter from "./auth";
 import articleRouter from "./article";
 import fabriquantRouter from "./fabriquant";
 import orderRouter from "./order";
+import orderItemsRouter from "./orderItems";
 
 const router = Router();
 
@@ -12,5 +13,7 @@ router.use("/user", userRouter);
 router.use("/article", articleRouter);
 router.use("/fabriquant", fabriquantRouter);
 router.use("/order", orderRouter);
+router.use("/items", orderItemsRouter);
+
 
 export default router;

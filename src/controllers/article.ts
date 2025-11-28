@@ -50,6 +50,9 @@ export default class ArticleController {
     const queryArgs: Prisma.ArticleFindManyArgs = {
       where: args?.where as Prisma.ArticleWhereInput,
       orderBy: args?.orderBy as Prisma.ArticleOrderByWithRelationInput,
+      include: {
+        order: true,
+      },
     };
 
     // Add skip only if defined

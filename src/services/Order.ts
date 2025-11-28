@@ -7,7 +7,7 @@ import { createOrderCredentials } from "../validations/order";
 
 export default class OrderService {
   createOrder = async (data: createOrderCredentials) => {
-    const { articleId, fabriquantId } = data;
+    const { articleId, fabriquantId, technicienId } = data;
 
     const articleExist = await prisma.article.findUnique({
       where: { id: articleId },
@@ -18,6 +18,11 @@ export default class OrderService {
       where: { id: fabriquantId },
     });
     if (!fabriquantExist) throw new NotFoundError("Fabriquant not exist");
+
+    const technicienExist = await prisma.user.findUnique({
+      where: { id: technicienId },
+    });
+    if (!technicienExist) throw new NotFoundError("technicien not exist");
 
     const newOrder = await prisma.order.create({
       data,

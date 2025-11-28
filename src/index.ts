@@ -7,6 +7,7 @@ import logger from "./utils/logger";
 import { AppError } from "./utils/appErrors";
 import router from "./routes";
 import prisma from "./config/database";
+import redisClient from "./config/redis";
 
 dotenv.config();
 
@@ -35,7 +36,6 @@ app.use((err: AppError, req: Request, res: Response, next: NextFunction) => {
         message: "Internal Server Error",
       });
 });
-
 prisma
   .$connect()
   .then(() => {

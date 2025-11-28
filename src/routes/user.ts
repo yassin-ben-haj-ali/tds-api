@@ -13,4 +13,9 @@ userRouter.post(
   catchMiddleware(userController.createUser)
 );
 
+userRouter.get("/", catchMiddleware(userController.getUsers));
+
+userRouter.patch("/:id", catchMiddleware(userController.updateUser));
+userRouter.delete("/:id", catchMiddleware(userController.deleteUser));
+
 export default userRouter;

@@ -77,7 +77,20 @@ export default class AuthController {
     if (!token || typeof token !== "string") {
       return res.status(400).json({ message: "Verification token required" });
     }
-    await this.authService.verifyEmailToken(token);
-    return res.status(200).json({ message: "Email verified successfully" });
+    const { token: emailToken } = await this.authService.verifyEmailToken(
+      token
+    );
+    return res
+      .status(200)
+      .json({ message: "Email verified successfully", token: emailToken });
+  };
+
+  resetPassword = async (req: Request, res: Response) => {
+    const { token, password } = req.body;
+    if (!token || !password) {
+      return res.status(400).json({ message: "Token and password required" });
+    }
+    await this.authService.resetPasswordWithToken(token, password);
+    return res.status(200).json({ message: "Password set successfully" });
   };
 }

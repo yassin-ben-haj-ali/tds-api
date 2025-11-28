@@ -16,5 +16,6 @@ authRouter.get("/me", authenticate, catchMiddleware(authController.active));
 authRouter.post("/logout", authenticate, authController.logout);
 authRouter.get("/refresh", catchMiddleware(authController.refresh));
 authRouter.get("/verify", catchMiddleware(authController.verify));
+authRouter.post("/reset-password", catchMiddleware(authController.resetPassword));
 
 export default authRouter;

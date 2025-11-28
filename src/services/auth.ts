@@ -228,12 +228,66 @@ export default class AuthService {
       where: { id: sub },
       data: { verified: true },
     });
-    
+
+    await redisClient.set(
+      `tokens:${sub}`,
+      JSON.stringify(Object.fromEntries(tokensMap))
+    );
+    return {
+      token: emailToken,
+    };
+  };
+  resetPasswordWithToken = async (token: string, password: string) => {
+    const { jti, sub } = jwt.verify(
+      token,
+      process.env.TOKEN_PASSWORD as string
+    ) as JWTPayload;
+
+    const userExist = await prisma.user.findUnique({
+      where: { id: sub },
+    });
+    if (!userExist) {
+      throw new NotFoundError("User not found");
+    }
+    if (!userExist.verified) {
+      throw new NotFoundError("User not verified");
+    }
+    if (userExist.password) {
+      throw new NotFoundError("Password already set");
+    }
+
+    // Get tokens from Redis
+    const tokens = await redisClient.get(`tokens:${sub}`);
+    if (!tokens) throw new NotFoundError("No session found");
+    const tokensMap = new Map<string, TokenData>(
+      Object.entries(JSON.parse(tokens))
+    );
+    const tokenData = tokensMap.get(jti);
+    if (!tokenData || tokenData.type !== "EMAIL_VERIFICATION") {
+      throw new NotFoundError("Token invalid");
+    }
+    if (tokenData.revockedAt) {
+      throw new NotFoundError("Token revoked");
+    }
+    if (tokenData.expAt !== -1 && tokenData.expAt < Date.now()) {
+      throw new NotFoundError("Token expired");
+    }
+
+    const hashedPassword = bcrypt.hashSync(
+      password,
+      Number(process.env.SALT_ROUNDS || 10)
+    );
+    await prisma.user.update({
+      where: { id: sub },
+      data: { password: hashedPassword },
+    });
+
+    // Revoke the token
     tokensMap.set(jti, { ...tokenData, revockedAt: Date.now() });
     await redisClient.set(
       `tokens:${sub}`,
       JSON.stringify(Object.fromEntries(tokensMap))
     );
-    return { message: "Email successfully verified" };
+    return { message: "Password set" };
   };
 }

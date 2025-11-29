@@ -27,6 +27,14 @@ export default class OrderService {
     const newOrder = await prisma.order.create({
       data,
     });
+    await prisma.article.update({
+      where: {
+        id: articleId,
+      },
+      data: {
+        status: "PENDING",
+      },
+    });
 
     return newOrder;
   };

@@ -49,7 +49,8 @@ export default class OrderController {
       include: {
         fabriquant: true,
         technicien: true,
-        article:true
+        article:true,
+        orderItems:true
       },
     };
 

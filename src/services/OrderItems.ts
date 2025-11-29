@@ -37,6 +37,8 @@ export default class OrderItemsService {
       data,
     });
 
+    await this.updateArticleStatus(orderId);
+
     return newOrderItems;
   };
 
@@ -47,11 +49,28 @@ export default class OrderItemsService {
 
     if (!orderItemsExist) throw new NotFoundError("Order items not found");
 
-    return prisma.orderItems.delete({
-      where: {
-        id: orderItemsId,
-      },
+    const deletedItem = await prisma.orderItems.delete({
+      where: { id: orderItemsId },
     });
+    const order = await prisma.order.findUnique({
+      where: { id: orderItemsExist.orderId },
+      include: { orderItems: true, article: true },
+    });
+
+    if (order) {
+      const itemsWorked = order.orderItems.reduce(
+        (acc, item) => acc + item.quantity,
+        0
+      );
+
+      if (itemsWorked < order.article.quantity) {
+        await prisma.article.update({
+          where: { id: order.article.id },
+          data: { status: "PENDING" },
+        });
+      }
+    }
+    return deletedItem;
   };
 
   updateOrderItems = async (id: string, data: Prisma.OrderItemsUpdateInput) => {
@@ -101,4 +120,25 @@ export default class OrderItemsService {
     ]);
     return { paginatedResult: data, totalCount };
   };
+
+  private async updateArticleStatus(orderId: string) {
+    const order = await prisma.order.findUnique({
+      where: { id: orderId },
+      include: {
+        orderItems: true,
+        article: true,
+      },
+    });
+    if (!order) return;
+    const itemsWorked = order.orderItems.reduce(
+      (acc, item) => acc + item.quantity,
+      0
+    );
+    if (itemsWorked >= order.article.quantity) {
+      await prisma.article.update({
+        where: { id: order.article.id },
+        data: { status: "COMPLETED" },
+      });
+    }
+  }
 }

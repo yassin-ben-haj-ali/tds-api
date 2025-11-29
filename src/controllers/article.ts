@@ -51,7 +51,11 @@ export default class ArticleController {
       where: args?.where as Prisma.ArticleWhereInput,
       orderBy: args?.orderBy as Prisma.ArticleOrderByWithRelationInput,
       include: {
-        order: true,
+        order: {
+          include: {
+            orderItems: true,
+          },
+        },
       },
     };
 
